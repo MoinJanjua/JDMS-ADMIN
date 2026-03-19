@@ -99,21 +99,6 @@ class AmeerJamatIntroViewController: UIViewController, UIImagePickerControllerDe
             
             switch result {
             case .success(let uploadedUrl):
-                // STEP 2: Now send the message text + the URL we just got
-//                let requestParams = AmeerMessageRequest(messageText: message, imageUrl: uploadedUrl, id: 1)
-//                
-//                APIClient.shared.sendAmeerMessage(params: requestParams) { messageResult in
-//                    self.activityIndicator.stopAnimating()
-//                    sender.isEnabled = true
-//                    
-//                    switch messageResult {
-//                    case .success:
-//                        self.showAlert(title: "Success", message: "Banner image and message saved successfully.")
-//                        self.messaegView.text = "" // Clear after success
-//                    case .failure(let error):
-//                        self.showAlert(title: "Error", message: "Failed to save message: \(error.localizedDescription)")
-//                    }
-//                }
                 
                 let updatedParams = AmeerMessageData(
                         id: 1, // Your record ID

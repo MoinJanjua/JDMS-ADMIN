@@ -2,7 +2,7 @@ import UIKit
 import SDWebImage
 
 class MemberDetailViewController: UIViewController {
-
+    
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var profileImageView: UIImageView!
     @IBOutlet weak var bgView: UIView!
@@ -56,7 +56,7 @@ class MemberDetailViewController: UIViewController {
             ]
         )
     ]
-
+    
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -71,18 +71,25 @@ class MemberDetailViewController: UIViewController {
         tableView.tableFooterView = UIView()
         Namelb.text = memberData?.fullName
         
+        // 1. Get the gender and choose the right placeholder
+        let gender = memberData?.gender?.lowercased() ?? "male"
+        let placeholderName = (gender == "female") ? "userFemale" : "user 1"
+        profileImageView.contentMode = (gender == "female") ? .scaleAspectFit : .scaleAspectFill
+        let placeholderImage = UIImage(named: placeholderName)
+        
+        // 2. Get the image path safely
         let imagePath = memberData?.imageUrl ?? ""
-
-        // 2. Only proceed if the path isn't empty
+        
+        // 3. Load or set the image
         if !imagePath.isEmpty {
             let finalUrlString = APIClient.shared.baseURL + imagePath
-            
             if let url = URL(string: finalUrlString) {
-                profileImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "user"))
+                // SDWebImage handles the download and shows the gender-specific placeholder
+                profileImageView.sd_setImage(with: url, placeholderImage: placeholderImage)
             }
         } else {
-            // 3. If no path exists, explicitly set the placeholder
-            profileImageView.image = UIImage(named: "user")
+            // No URL found, so we fall back to the gender-specific placeholder immediately
+            profileImageView.image = placeholderImage
         }
         
         verifylb.text = memberData?.membershipStatus
@@ -96,7 +103,23 @@ class MemberDetailViewController: UIViewController {
             verifyView.backgroundColor = .red
         }
         
-       
+        if memberData?.membershipStatus == "VERIFIED" {
+            
+            verifyView.backgroundColor = DimGreenColor
+            verifyView.layer.borderColor = UIColor(red: 52/255, green: 199/255, blue: 89/255, alpha: 1.0).cgColor
+            verifyView.layer.borderWidth = 1.0 // Show a small green indicator in your verifyView
+            verifylb.textColor = .systemGreen
+            
+        }
+        else {
+            
+            verifyView.backgroundColor = DimRedColor
+            verifyView.layer.borderColor =  UIColor(red: 255/255, green: 59/255, blue: 48/255, alpha: 1.0).cgColor
+            verifyView.layer.borderWidth = 1.0
+            verifylb.textColor = .systemRed
+        }
+        
+        
         
     }
     
@@ -153,7 +176,7 @@ class MemberDetailViewController: UIViewController {
             }
         }
     }
-
+    
     
     @IBAction func backBtnTapped(_ sender: UIButton) {
         self.dismiss(animated: true)
@@ -167,14 +190,14 @@ class MemberDetailViewController: UIViewController {
         
         // 1. Show Confirmation Alert
         self.showAlertWithButtons(title: "Delete Member",
-                       message: "Are you sure you want to permanently delete \(memberData?.fullName ?? "this member")?",
-                       okTitle: "Delete",
-                       cancelTitle: "Cancel") { [weak self] in
+                                  message: "Are you sure you want to permanently delete \(memberData?.fullName ?? "this member")?",
+                                  okTitle: "Delete",
+                                  cancelTitle: "Cancel") { [weak self] in
             
             self?.performDelete(id: memberId)
         }
     }
-
+    
     
 }
 
@@ -184,7 +207,7 @@ extension MemberDetailViewController: UITableViewDelegate, UITableViewDataSource
     func numberOfSections(in tableView: UITableView) -> Int {
         return profileSections.count
     }
-
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return profileSections[section].fields.count
     }
@@ -218,7 +241,7 @@ extension MemberDetailViewController: UITableViewDelegate, UITableViewDataSource
         headerView.addSubview(label)
         return headerView
     }
-
+    
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 40
     }

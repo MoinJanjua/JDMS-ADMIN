@@ -174,21 +174,6 @@ class AddMemberViewController: UIViewController, UIImagePickerControllerDelegate
     }
 
     // Helper for the API's ISO 8601 requirement
-    func formatToISO8601(dateString: String?) -> String {
-        guard let dateString = dateString, !dateString.isEmpty else {
-            return "2026-02-19T00:00:00.000Z" // Fallback
-        }
-        
-        let displayFormatter = DateFormatter()
-        displayFormatter.dateFormat = "yyyy-MM-dd"
-        
-        if let date = displayFormatter.date(from: dateString) {
-            let isoFormatter = ISO8601DateFormatter()
-            isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return isoFormatter.string(from: date)
-        }
-        return "2026-02-19T00:00:00.000Z"
-    }
     
     func setupUI() {
         cnicTextField.delegate = self
@@ -520,4 +505,20 @@ class AddMemberViewController: UIViewController, UIImagePickerControllerDelegate
         return true
     }
     
+}
+
+func formatToISO8601(dateString: String?) -> String {
+    guard let dateString = dateString, !dateString.isEmpty else {
+        return "2026-02-19T00:00:00.000Z" // Fallback
+    }
+    
+    let displayFormatter = DateFormatter()
+    displayFormatter.dateFormat = "yyyy-MM-dd"
+    
+    if let date = displayFormatter.date(from: dateString) {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return isoFormatter.string(from: date)
+    }
+    return "2026-02-19T00:00:00.000Z"
 }

@@ -23,10 +23,13 @@ class IjtimatViewController: UIViewController {
         roundCorner(button: addbtn)
         setupTableView()
         setupActivityIndicator()
+       
 
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        let canManage = PermissionManager.shared.canPerform(action: .addIjtimat)
+        addbtn.isHidden = !canManage
         fetchEventsData(isRefresh: true)
     }
     

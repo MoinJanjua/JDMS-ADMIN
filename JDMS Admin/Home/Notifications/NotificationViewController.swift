@@ -31,7 +31,8 @@ class NotificationViewController: UIViewController {
         setupTableView()
         setupActivityIndicator()
         roundCorner(button: addbtn)
-        
+        let canManage = PermissionManager.shared.canPerform(action: .AddNotification)
+        addbtn.isHidden = !canManage
         // Initial Fetch from API
        
     }
@@ -63,47 +64,59 @@ class NotificationViewController: UIViewController {
     }
 
     // MARK: - API Fetching
+    
     private func fetchNotificationsData(isRefresh: Bool = false) {
         guard !isFetching else { return }
         
         if isRefresh {
             currentPage = 1
             hasMoreData = true
+            // OPTIONAL: notificationList.removeAll() // Clear here if you want a clean slate during load
         }
         
         guard hasMoreData else { return }
         
         isFetching = true
         if isRefresh { refreshControl.beginRefreshing() }
-        activityIndicatorView.isHidden = false
-        activityIndicatorView.startAnimating()
+        
+        // Only show center indicator if list is empty
+        if notificationList.isEmpty {
+            activityIndicatorView.isHidden = false
+            activityIndicatorView.startAnimating()
+        }
 
         APIClient.shared.fetchNotifications(pageNumber: currentPage, pageSize: pageSize) { [weak self] result in
             DispatchQueue.main.async {
-                self?.isFetching = false
-                self?.refreshControl.endRefreshing()
-                self?.activityIndicatorView.stopAnimating()
-                self?.activityIndicatorView.isHidden = true
+                guard let self = self else { return }
+                self.isFetching = false
+                self.refreshControl.endRefreshing()
+                self.activityIndicatorView.stopAnimating()
+                self.activityIndicatorView.isHidden = true
                 
                 switch result {
                 case .success(let response):
                     let newItems = response.data.data
                     
                     if isRefresh {
-                        self?.notificationList = newItems
+                        // Overwrite the list on refresh
+                        self.notificationList = newItems
                     } else {
-                        self?.notificationList.append(contentsOf: newItems)
+                        // Only append items that aren't already in the list (ID Check)
+                        let existingIDs = Set(self.notificationList.map { $0.id })
+                        let filteredNewItems = newItems.filter { !existingIDs.contains($0.id) }
+                        self.notificationList.append(contentsOf: filteredNewItems)
                     }
                     
-                    // Update Pagination state from response
-                    self?.hasMoreData = response.data.paginationResponseDetails.hasNextPage
-                    self?.currentPage += 1
+                    self.hasMoreData = response.data.paginationResponseDetails.hasNextPage
+                    if !newItems.isEmpty {
+                        self.currentPage += 1
+                    }
                     
-                    self?.tv.reloadData()
+                    self.tv.reloadData()
                     
                 case .failure(let error):
                     print("Error: \(error.localizedDescription)")
-                    self?.handleAPIError(error)
+                    self.handleAPIError(error)
                 }
             }
         }
@@ -177,6 +190,15 @@ extension NotificationViewController: UITableViewDataSource, UITableViewDelegate
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         
         // 1. DELETE ACTION
+        
+        
+        let canManage = PermissionManager.shared.canPerform(action: .AddNotification)
+            
+            // 2. If no permission, return nil so they can't even swipe
+            guard canManage else {
+                return nil
+            }
+        
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (_, _, completionHandler) in
             guard let self = self else { return }
             let notification = self.notificationList[indexPath.row]

@@ -11,7 +11,7 @@ import UIKit
 class APIClient {
     
     static let shared = APIClient() // Singleton instance
-    let baseURL = "https://jdms.bsite.net"
+    let baseURL = "https://jdmsapp.bsite.net"//"https://jdms.bsite.net"
     
     private init() {}
     
@@ -70,7 +70,11 @@ class APIClient {
             return
         }
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            if let jsonString = String(data: data!, encoding: .utf8) {
+                print("📦 Response: \(jsonString)")
+             }
             DispatchQueue.main.async {
                 if let error = error {
                     completion(.failure(error))
@@ -103,6 +107,9 @@ class APIClient {
         }
         
         URLSession.shared.dataTask(with: request) { data, response, error in
+            
+         
+            
             DispatchQueue.main.async {
                 if let error = error {
                     completion(.failure(error))
@@ -210,6 +217,7 @@ class APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
         
         do {
             request.httpBody = try JSONEncoder().encode(params)
@@ -381,7 +389,7 @@ class APIClient {
         
         // Prepare Body (defaulting to get all)
         let body = DistrictRequest(
-            paginationRequest: PaginationRequest(pageNumber: 1, pageSize: 100, sortDirection: "Asc"),
+            paginationRequest: PaginationRequest(pageNumber: 1, pageSize: 200, sortDirection: "Asc"),
             filters: DistrictFilters(searchTerm: "", name: "", code: "")
         )
         
@@ -419,6 +427,24 @@ class APIClient {
                 }
             }
         }.resume()
+    }
+    
+    
+    func getAllConstituencies(completion: @escaping (Result<[Constituency1], Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Constituencies/GetAll"
+        
+        // Construct the body for "Get All" logic
+        let body: [String: Any] = [
+            "paginationRequest": [
+                "pageNumber": 1,
+                "pageSize": 1000, // Large number to get everything
+                "sortDirection": "Asc"
+            ],
+            "filters": [:] // Empty filters to get all records
+        ]
+        
+        // Using a POST method since this API requires a request body
+        performPostRequest(urlString: urlString, body: body, completion: completion)
     }
     
     
@@ -500,7 +526,7 @@ class APIClient {
             searchTerm: "",
             name: "",
             code: "",
-            constituencyId: constituencyId ?? 0
+            constituencyId: ""
         )
         
         let body = UCRequest(
@@ -872,7 +898,7 @@ class APIClient {
     
     func fetchAllDawat(page: Int, completion: @escaping (Result<[DawatRecord], Error>) -> Void) {
         // 1. Ensure the URL is using the production/live path if needed
-        guard let url = URL(string: "https://jdms.bsite.net/api/Dawat/GetAll") else { return }
+        guard let url = URL(string: "\(baseURL)/api/Dawat/GetAll") else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -910,9 +936,9 @@ class APIClient {
             }
             
 //            
-//            if let data = data, let jsonString = String(data: data, encoding: .utf8) {
-//                print("📦 Server Response: \(jsonString)")
-//            }
+            if let data = data, let jsonString = String(data: data, encoding: .utf8) {
+                print("📦 Server Response: \(jsonString)")
+            }
             
             DispatchQueue.main.async {
                 if let error = error {
@@ -1446,7 +1472,7 @@ class APIClient {
         }
         
         // Using your existing structs for better type safety
-        let pagination = PaginationRequest(pageNumber: 1, pageSize: 20, sortDirection: "Asc")
+        let pagination = PaginationRequest(pageNumber: 1, pageSize: 100, sortDirection: "Asc")
         let filters = MemberFilters(searchTerm: query)
         let searchBody = MemberListRequest(paginationRequest: pagination, memberFilters: filters)
         
@@ -2014,10 +2040,7 @@ class APIClient {
 
         URLSession.shared.dataTask(with: request) { data, _, error in
             
-            if let bodyString = String(data: data!, encoding: .utf8) {
-                print("📤 fetchUserProfile Body: \(bodyString)")
-            }
-            
+           
             if let error = error { completion(.failure(error)); return }
             guard let data = data else { return }
             do {
@@ -2047,7 +2070,19 @@ class APIClient {
             return
         }
 
-        URLSession.shared.dataTask(with: request) { _, response, error in
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if statusCode == 401 {
+                let unauthError = NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Session Expired"])
+                completion(.failure(unauthError)); return
+            }
+            
+            
+            if let bodyString = String(data: data!, encoding: .utf8) {
+                print("📤 Sending Body: \(bodyString)")
+            }
+            
             DispatchQueue.main.async {
                 if let error = error { completion(.failure(error)); return }
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -2081,6 +2116,13 @@ class APIClient {
         }
 
         URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if statusCode == 401 {
+                let unauthError = NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Session Expired"])
+                completion(.failure(unauthError)); return
+            }
+            
             if let error = error {
                 completion(.failure(error))
                 return
@@ -2100,6 +2142,987 @@ class APIClient {
     }
     
     
+    
+    func getDashboardStats(completion: @escaping (Result<DashboardStats, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Dashboard/stats"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if statusCode == 401 {
+                let unauthError = NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Session Expired"])
+                completion(.failure(unauthError)); return
+            }
+            
+            
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+            
+            do {
+                let result = try JSONDecoder().decode(DashboardStatsResponse.self, from: data)
+                if result.isSuccess {
+                    completion(.success(result.data))
+                } else {
+                    let serverError = NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: result.message ?? "Unknown Error"])
+                    completion(.failure(serverError))
+                }
+            } catch {
+                print("❌ Decoder Error: \(error)")
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func getAllRegions(page: Int, searchTerm: String = "", completion: @escaping (Result<RegionResponse, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Regions/GetAll"
+        guard let url = URL(string: urlString) else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("*/*", forHTTPHeaderField: "accept")
+
+        // Authorization
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Construct Body
+        // Use the new struct names here
+        let body = RegionFetchRequest(
+            paginationRequest: RegionPaginationRequest(
+                pageNumber: page,
+                pageSize: 50,
+                afterCursor: 0,
+                beforeCursor: 0,
+                sortDirection: "Asc"
+            ),
+            filters: RegionFilters(searchTerm: searchTerm)
+        )
+        do {
+            request.httpBody = try JSONEncoder().encode(body)
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+
+            guard let data = data else { return }
+
+            do {
+                let decodedResponse = try JSONDecoder().decode(RegionResponse.self, from: data)
+                completion(.success(decodedResponse))
+            } catch {
+                print("Decoding Error: \(error)")
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func getDistrictsByRegion(regionId: Int, completion: @escaping (Result<[District], Error>) -> Void) {
+        // The endpoint path as per your requirement: /api/Districts/{id}
+        let urlString = "\(baseURL)/api/Districts/\(regionId)"
+        
+        guard let url = URL(string: urlString) else {
+            completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        // Add Authorization Token
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            if let data = data,
+               let jsonString = String(data: data, encoding: .utf8) {
+                print("📦 getDistrictsByRegion: \(jsonString)")
+            }
+
+            
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+            
+            do {
+                // 1. Decode as SingleDistrictResponse instead of [District]
+                let decodedResponse = try JSONDecoder().decode(SingleDistrictResponse.self, from: data)
+                
+                if let district = decodedResponse.data {
+                    // 2. Wrap the single district into an array [District]
+                    // This keeps your TableView logic happy
+                    completion(.success([district]))
+                } else {
+                    // If data is null, return an empty array
+                    completion(.success([]))
+                }
+                
+            } catch {
+                print("❌ Decoding Error for Districts: \(error)")
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func saveDistrictBtRegionID(name: String, regionId: Int, urdu: String, code: String, desc: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Districts"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // The keys here MUST match your API schema: "name", "regionId", "urduName", "code", "description"
+        let body: [String: Any] = [
+            "name": name,
+            "regionId": regionId,
+            "urduName": urdu,
+            "code": code,
+            "description": desc
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            completion(.failure(error)); return
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            if let data = data,
+               let jsonString = String(data: data, encoding: .utf8) {
+                print("📦 saveDistrictBtRegionID: \(jsonString)")
+            }
+
+            
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                // Usually 200 or 201 means success for a POST
+                if statusCode == 200 || statusCode == 201 {
+                    completion(.success(true))
+                } else {
+                    let error = NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Server returned status code \(statusCode)"])
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+    
+    
+    // Fetch Constituencies for a specific District
+    // Fetch SINGLE Constituency (returns { data: {} })
+    // Change [Constituency1] to Constituency1
+    func getConstituencyByDistrict(id: Int, completion: @escaping (Result<Constituency1, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Constituencies/\(id)"
+        performSingleRequest(urlString: urlString, completion: completion)
+    }
+
+    // Fetch SINGLE Union Council
+    // Change [UnionCouncil1] to UnionCouncil1
+    func getUCByConstituency(id: Int, completion: @escaping (Result<UnionCouncil1, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/UnionCouncils/\(id)"
+        performSingleRequest(urlString: urlString, completion: completion)
+    }
+
+    // Fetch SINGLE Ward
+    func getWardByUC(id: Int, completion: @escaping (Result<Ward1, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Wards/\(id)"
+        performSingleRequest(urlString: urlString, completion: completion)
+    }
+
+   
+    // Use this for endpoints that return ONE item (like your current /api/Constituencies/2)
+    private func performSingleRequest<T: Codable>(urlString: String, completion: @escaping (Result<T, Error>) -> Void) {
+        guard let url = URL(string: urlString) else { return }
+        var request = URLRequest(url: url)
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, _, error in
+            
+            if let data = data,
+               let jsonString = String(data: data, encoding: .utf8) {
+                print("📦 uploadDawatPDF:\(urlString): \(jsonString)")
+            }
+            
+            if let error = error { completion(.failure(error)); return }
+            guard let data = data else { return }
+            
+            do {
+                // Notice: Decodes APIResponses<T>, NOT <[T]>
+                let response = try JSONDecoder().decode(APIResponses<T>.self, from: data)
+                if response.isSuccess, let resultData = response.data {
+                    completion(.success(resultData))
+                } else {
+                    let error = NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: response.message ?? "Error"])
+                    completion(.failure(error))
+                }
+            } catch {
+                print("Decoding Error: \(error)")
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    
+    // Generic POST helper
+    private func performPostRequest<T: Codable>(urlString: String, body: [String: Any], completion: @escaping (Result<T, Error>) -> Void) {
+        guard let url = URL(string: urlString) else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        } catch {
+            completion(.failure(error))
+            return
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, _, error in
+            if let error = error { completion(.failure(error)); return }
+            guard let data = data else { return }
+            
+            do {
+                // Decoding using your wrapper
+                let response = try JSONDecoder().decode(APIResponses<T>.self, from: data)
+                if response.isSuccess, let resultData = response.data {
+                    completion(.success(resultData))
+                } else {
+                    let error = NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: response.message ?? "Save failed"])
+                    completion(.failure(error))
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+
+    // MARK: - Save Functions
+
+    // MARK: - Save Functions (Updated with JD Models)
+
+    func saveRegion(name: String, urdu: String, code: String, desc: String, completion: @escaping (Result<JDRegion, Error>) -> Void) {
+        let body: [String: Any] = ["name": name, "urduName": urdu, "code": code, "description": desc]
+        performPostRequest(urlString: "\(baseURL)/api/Regions", body: body, completion: completion)
+    }
+
+    func saveDistrict(name: String, regionId: Int, urdu: String, code: String, desc: String, completion: @escaping (Result<JDDistrict, Error>) -> Void) {
+        let body: [String: Any] = ["name": name, "regionId": regionId, "urduName": urdu, "code": code, "description": desc]
+        performPostRequest(urlString: "\(baseURL)/api/Districts", body: body, completion: completion)
+    }
+
+    func saveConstituency(name: String, districtId: Int, urdu: String, code: String, desc: String, completion: @escaping (Result<JDConstituency, Error>) -> Void) {
+        let body: [String: Any] = ["name": name, "districtId": districtId, "urduName": urdu, "code": code, "description": desc]
+        performPostRequest(urlString: "\(baseURL)/api/Constituencies", body: body, completion: completion)
+    }
+
+    func saveUC(name: String, constituencyId: Int, urdu: String, code: String, desc: String, completion: @escaping (Result<JDUnionCouncil, Error>) -> Void) {
+        let body: [String: Any] = ["name": name, "constituencyId": constituencyId, "urduName": urdu, "code": code, "description": desc]
+        performPostRequest(urlString: "\(baseURL)/api/UnionCouncils", body: body, completion: completion)
+    }
+
+    func saveWard(name: String, ucId: Int, urdu: String, code: String, desc: String, completion: @escaping (Result<JDWard, Error>) -> Void) {
+        let body: [String: Any] = ["name": name, "unionCouncilId": ucId, "urduName": urdu, "code": code, "description": desc]
+        performPostRequest(urlString: "\(baseURL)/api/Wards", body: body, completion: completion)
+    }
+    
+    
+    func getAllRegions(searchTerm: String? = nil, completion: @escaping (Result<[JDRegion], Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Regions/GetAll"
+        
+        // Create the body structure based on your schema
+        let body: [String: Any] = [
+            "paginationRequest": [
+                "pageNumber": 1,
+                "pageSize": 200, // Large number to get all for now
+                "sortDirection": "Asc"
+            ],
+            "filters": [
+                "searchTerm": searchTerm ?? ""
+            ]
+        ]
+        
+        // We can reuse the performPostRequest helper we created earlier
+        performPostRequest(urlString: urlString, body: body, completion: completion)
+    }
+    
+    
+    func getAllUsers(completion: @escaping (Result<[JDMSUser], Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Users/GetAll"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // Body according to your Curl example
+        let body: [String: Any] = [
+            "paginationRequest": [
+                "pageNumber": 1,
+                "pageSize": 100,
+                "afterCursor": 0,
+                "beforeCursor": 0,
+                "sortDirection": "Asc"
+            ],
+            "filters": [
+                "email": "",
+                "phoneNumber": "",
+                "name": ""
+            ]
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            completion(.failure(error)); return
+        }
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error)); return
+            }
+            
+            guard let data = data else { return }
+            
+            do {
+                let decodedResponse = try JSONDecoder().decode(JDMSUserResponse.self, from: data)
+                // Access decodedResponse.data.users to get the list
+                completion(.success(decodedResponse.data?.users ?? []))
+            } catch {
+                print("❌ User Decoding Error: \(error)")
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func deleteUser(userId: Int, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Users/\(userId)"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            if let data = data, let jsonString = String(data: data, encoding: .utf8) {
+                print("📦 deleteUser Response: \(jsonString)")
+            }
+            
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                if statusCode == 200 || statusCode == 204 {
+                    completion(.success(true))
+                } else {
+                    let error = NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to delete user. Code: \(statusCode)"])
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+    
+    
+    func patchUserDetails(userId: Int, fullName: String, email: String, phone: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Users/\(userId)"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // Body keys must match your provided schema: fullName, email, phoneNumber
+        let body: [String: Any] = [
+            "fullName": fullName,
+            "email": email,
+            "phoneNumber": phone
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            completion(.failure(error)); return
+        }
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+          
+            
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error)); return
+                }
+                
+                guard let data = data else { return }
+                
+                do {
+                    // 1. Decode the standard response wrapper
+                    let apiResponse = try JSONDecoder().decode(JDMSUserResponse1.self, from: data)
+                    
+                    if apiResponse.isSuccess {
+                        completion(.success(true))
+                    } else {
+                        // 2. Extract the specific error message from the server
+                        let serverMessage = apiResponse.message ?? "Validation failed"
+                        
+                        // If there are specific field errors (like the phone number issue), you can grab the first one
+                        let detailedError = apiResponse.errors?.first?.description ?? serverMessage
+                        
+                        let customError = NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: detailedError])
+                        completion(.failure(customError))
+                    }
+                } catch {
+                    // Fallback for non-JSON responses or decoding issues
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    if statusCode == 200 || statusCode == 204 {
+                        completion(.success(true))
+                    } else {
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }.resume()
+    }
+    
+    
+    // 1. Fetch all available roles in the system
+    func getAllRoles(completion: @escaping (Result<[JDMSUserRole], Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Account/all-roles"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error { completion(.failure(error)); return }
+                guard let data = data else { return }
+                
+                do {
+                    let decoded = try JSONDecoder().decode(JDMSAllRolesResponse.self, from: data)
+                    completion(.success(decoded.data ?? []))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    // 2. Assign a specific role to a user
+    func assignRole(userId: Int, roleId: Int, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Account/assign-role"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let body = JDMSAssignRoleRequest(userId: userId, roleId: roleId)
+        
+        do {
+            request.httpBody = try JSONEncoder().encode(body)
+        } catch {
+            completion(.failure(error)); return
+        }
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error { completion(.failure(error)); return }
+                
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                if statusCode == 200 || statusCode == 204 {
+                    completion(.success(true))
+                } else {
+                    let error = NSError(domain: "", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed to assign role. Code: \(statusCode)"])
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+    
+    
+    
+    func startDirectConversation(user1Id: Int, user2Id: Int, completion: @escaping (Result<JDMSConversationData, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Chat/conversations/direct"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let body: [String: Any] = [
+            "user1Id": user1Id,
+            "user2Id": user2Id
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let data = data else { return }
+                
+                do {
+                    let decodedResponse = try JSONDecoder().decode(JDMSDirectChatResponse.self, from: data)
+                    if decodedResponse.isSuccess, let chatData = decodedResponse.data {
+                        completion(.success(chatData))
+                    } else {
+                        let serverMsg = decodedResponse.message ?? "Could not start chat"
+                        completion(.failure(NSError(domain: "", code: 400, userInfo: [NSLocalizedDescriptionKey: serverMsg])))
+                    }
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+    
+    
+    func getMemberProfile(id: Int, completion: @escaping (Result<String, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Members/\(id)"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            guard let data = data else { return }
+            
+            do {
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                let dataDict = json?["data"] as? [String: Any]
+                if let relativePath = dataDict?["imageUrl"] as? String {
+                    // Return the full URL string
+                    completion(.success("\(self.baseURL)\(relativePath)"))
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    
+    func getConversations(for userId: Int, completion: @escaping (Result<[JDMSConversationData], Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Chat/conversations/user/\(userId)"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        // 1. Set standard headers
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        // 2. Add Token correctly
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            
+            // 3. Debug: Check the HTTP Status Code
+            if let httpResponse = response as? HTTPURLResponse {
+                print("🌐 Status Code: \(httpResponse.statusCode)")
+            }
+            
+            if let error = error {
+                print("❌ Network Error: \(error.localizedDescription)")
+                DispatchQueue.main.async { completion(.failure(error)) }
+                return
+            }
+            
+            guard let data = data else {
+                print("⚠️ No data received from server")
+                return
+            }
+            
+            DispatchQueue.main.async {
+                do {
+                    let decoded = try JSONDecoder().decode(JDMSAllConversationsResponse.self, from: data)
+                    completion(.success(decoded.data ?? []))
+                } catch {
+                    print("🍎 Decoding Error: \(error)")
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+    
+
+    // MARK: - Chat Messages API
+        
+        // 1. Fetch Message History (GET)
+        func getChatHistory(conversationId: Int, skip: Int = 0, take: Int = 50, completion: @escaping (Result<[JDMSMessageData], Error>) -> Void) {
+            let urlString = "\(baseURL)/api/Chat/conversations/\(conversationId)/messages?skip=\(skip)&take=\(take)"
+            guard let url = URL(string: urlString) else { return }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.addValue("application/json", forHTTPHeaderField: "accept")
+            
+            if let token = UserDefaults.standard.string(forKey: "userToken") {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+            
+            let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+            session.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    DispatchQueue.main.async { completion(.failure(error)) }
+                    return
+                }
+                guard let data = data else { return }
+                
+                do {
+                    let decodedResponse = try JSONDecoder().decode(JDMSMessagesResponse.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(.success(decodedResponse.data ?? []))
+                    }
+                } catch {
+                    DispatchQueue.main.async { completion(.failure(error)) }
+                }
+            }.resume()
+        }
+        
+        // 2. Send New Message (POST)
+    func sendMessage(conversationId: Int, text: String, completion: @escaping (Result<JDMSMessageData, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/Chat/conversations/\(conversationId)/messages"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // FIX 1: Change "text" to "messageText" to match what your API expects
+        let body: [String: Any] = ["messageText": text]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async { completion(.failure(error)) }
+                return
+            }
+            
+            guard let data = data else { return }
+           
+            
+            do {
+                // FIX 2: Decode into the wrapper response
+                let decodedResponse = try JSONDecoder().decode(JDMSMessagesResponse.self, from: data)
+                
+                if let newMessage = decodedResponse.data?.first {
+                    DispatchQueue.main.async { completion(.success(newMessage)) }
+                } else {
+                    // If data is empty but isSuccess is true, handle accordingly
+                    let customError = NSError(domain: "API", code: 0, userInfo: [NSLocalizedDescriptionKey: "No message data returned"])
+                    DispatchQueue.main.async { completion(.failure(customError)) }
+                }
+            } catch {
+                print("❌ Decoding Error: \(error)")
+                DispatchQueue.main.async { completion(.failure(error)) }
+            }
+        }.resume()
+    }
+    
+    
+    func createDirectConversation(user1Id: Int, user2Id: Int, completion: @escaping (Result<Int, Error>) -> Void) {
+        let url = URL(string: "\(baseURL)/api/Chat/conversations/direct")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        // 1. Match the CURL headers exactly
+        request.addValue("application/json-patch+json", forHTTPHeaderField: "Content-Type")
+        request.addValue("text/plain", forHTTPHeaderField: "accept")
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        // 2. Body structure
+        let body: [String: Any] = [
+            "user1Id": user1Id,
+            "user2Id": user2Id
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            // 3. Check if data is nil or empty BEFORE parsing
+            guard let data = data, !data.isEmpty else {
+                let emptyError = NSError(domain: "APIError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Server returned empty response body."])
+                completion(.failure(emptyError))
+                return
+            }
+            
+            // Log the raw string to see what the server is actually sending
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("RAW RESPONSE: \(jsonString)")
+            }
+
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    // Check for your specific JSON structure: { "data": { "id": 10 ... } }
+                    if let dataDict = json["data"] as? [String: Any],
+                       let conversationId = dataDict["id"] as? Int {
+                        completion(.success(conversationId))
+                    } else if let message = json["message"] as? String, !message.isEmpty {
+                        let serverError = NSError(domain: "API", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+                        completion(.failure(serverError))
+                    } else {
+                        let parseError = NSError(domain: "API", code: 2, userInfo: [NSLocalizedDescriptionKey: "Could not find 'id' in response."])
+                        completion(.failure(parseError))
+                    }
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    
+    func uploadBannerImages(images: [UIImage], completion: @escaping (Result<Bool, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/BannerImages/upload-temp"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        // Add Token
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let httpBody = NSMutableData()
+        
+        for (index, image) in images.enumerated() {
+            if let imageData = image.jpegData(compressionQuality: 0.7) {
+                httpBody.append("--\(boundary)\r\n".data(using: .utf8)!)
+                // name="Files" must match what the backend [FromForm] or IFormFile expects
+                httpBody.append("Content-Disposition: form-data; name=\"Files\"; filename=\"banner_\(index).jpg\"\r\n".data(using: .utf8)!)
+                httpBody.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+                httpBody.append(imageData)
+                httpBody.append("\r\n".data(using: .utf8)!)
+            }
+        }
+        
+        // FINAL BOUNDARY (must have -- at the end)
+        httpBody.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = httpBody as Data
+        
+        // Let URLSession handle Content-Length automatically, or set it like this:
+        request.setValue("\(httpBody.length)", forHTTPHeaderField: "Content-Length")
+
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            
+            if statusCode == 401 {
+                // Handle Logout
+                completion(.failure(NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "Session Expired"])))
+                return
+            }
+            
+            if statusCode == 200 || statusCode == 201 {
+                DispatchQueue.main.async { completion(.success(true)) }
+            } else {
+                let errorMsg = String(data: data ?? Data(), encoding: .utf8) ?? "Unknown Error"
+                print("❌ Upload Failed (\(statusCode)): \(errorMsg)")
+                completion(.failure(NSError(domain: "", code: statusCode)))
+            }
+        }.resume()
+    }
+    
+    func getBannerImages(completion: @escaping (Result<[BannerImage], Error>) -> Void) {
+        let urlString = "\(baseURL)/api/BannerImages/GetAll"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // Construct the body exactly like Swagger
+        let body: [String: Any] = [
+            "paginationRequest": [
+                "pageNumber": 1,
+                "pageSize": 50,
+                "afterCursor": 0,
+                "beforeCursor": 0,
+                "sortDirection": "Asc"
+            ],
+            "isActive": true
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async { completion(.failure(error)) }
+                return
+            }
+            
+            guard let data = data else { return }
+            
+            do {
+                let decodedResponse = try JSONDecoder().decode(BannerResponse.self, from: data)
+                DispatchQueue.main.async {
+                    // Accessing the double-nested 'data' array
+                    completion(.success(decodedResponse.data?.data ?? []))
+                }
+            } catch {
+                print("❌ Decoding Error: \(error)")
+                DispatchQueue.main.async { completion(.failure(error)) }
+            }
+        }.resume()
+    }
+    
+    func deleteBannerImage(id: Int, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let urlString = "\(baseURL)/api/BannerImages/\(id)"
+        guard let url = URL(string: urlString) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.addValue("Bearer \(UserDefaults.standard.string(forKey: "userToken") ?? "")", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
+                return
+            }
+
+            do {
+                // Mapping to your standard ApiResponse structure
+                let decodedResponse = try JSONDecoder().decode(ApiResponse<String?>.self, from: data)
+                completion(.success(decodedResponse.isSuccess))
+            } catch {
+                print("Decoding Error: \(error)")
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
 }
 
 
+//let session = URLSession(configuration: .default, delegate: UnsafeSessionDelegate(), delegateQueue: nil)
+//session.dataTask(with: request) { data, response, error in

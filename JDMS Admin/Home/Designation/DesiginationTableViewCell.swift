@@ -21,17 +21,19 @@ class DesiginationTableViewCell: UITableViewCell {
         super.awakeFromNib()
         // Initialization code
         addDropShadow(to: BgView)
+        let canManage = PermissionManager.shared.canPerform(action: .Adddesigination)
+        deletebtn.isEnabled = canManage
+        editbtn.isEnabled = canManage
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
 
-        // Configure the view for the selected state
     }
     
     @IBAction func deletePressed(_ sender: UIButton) {
             onDeleteTap?()
-        }
+    }
     
     
     @IBAction func editPressed(_ sender: UIButton)

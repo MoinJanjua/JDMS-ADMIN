@@ -265,6 +265,7 @@ struct LoginResponse: Decodable {
 struct LoginData: Decodable {
     let id: String?
     let userName: String?
+    let name: String?
     let email: String?
     let token: String?
     let refreshToken: String?
@@ -341,11 +342,18 @@ struct DistrictResponse: Decodable {
 }
 
 struct District: Decodable {
-    let id: Int
-    let name: String
-    let code: String?
+    let id: Int          // This MUST map to "id" (e.g., 5010)
+        let name: String     // "Islamabad"
+        let regionId: Int    // This MUST map to "regionId" (e.g., 18)
+        let regionName: String?
 }
 
+// This matches the JSON structure you just printed
+struct SingleDistrictResponse: Decodable {
+    let data: District?
+    let isSuccess: Bool
+    let message: String?
+}
 
 //Constitutions
 struct ConstituencyRequest: Encodable {
@@ -385,7 +393,7 @@ struct UCFilters: Encodable {
     let searchTerm: String?
     let name: String?
     let code: String?
-    let constituencyId: Int? // Filter by Constituency
+    let constituencyId: String? // Filter by Constituency
 }
 
 // Response Models
@@ -477,7 +485,39 @@ struct MemberRequest: Encodable,Decodable {
 }
 
 
-
+struct MemberUpdateDTO: Codable {
+    let id: Int
+    let fullName: String
+    let urduName: String
+    let fatherName: String
+    let cnic: String
+    let email: String?
+    let phoneNumber: String
+    let alternatePhoneNumber: String?
+    let address: String
+    let city: String
+    let district: String
+    let village: String?
+    let dateOfBirth: String? // Send as formatted ISO8601 string
+    let gender: String
+    let maritalStatus: String
+    let bloodGroup: String
+    let education: String
+    let profession: String
+    let skills: String?
+    let referralName: String?
+    let designationId: Int
+    let regionId: Int? // Add this if in Swagger
+    let districtId: Int
+    let constituencyId: Int
+    let unionCouncilId: Int
+    let wardId: Int
+    let joiningDate: String?
+    let membershipStatus: String
+    let notes: String?
+    let nameofLocalJamat: String?
+    let tempImageId: String?
+}
 //Members
 struct MemberSaveResponse: Decodable {
     let isSuccess: Bool
@@ -581,7 +621,7 @@ struct Member: Codable {
     let maritalStatus: String?
     let joiningDate: String?
     let referralName:String?
-    let membershipStatus: String?
+    var membershipStatus: String?
     let nameofLocalJamat: String?
     let imageUrl: String? // Note: The JSON uses imageUrl for the list
     let dateOfBirth : String?
@@ -1159,4 +1199,358 @@ struct MemberUpdateRequest: Codable {
     let notes: String?
     let nameofLocalJamat: String?
     let tempImageId: String?
+}
+
+
+struct DashboardStatsResponse: Codable {
+    let data: DashboardStats
+    let isSuccess: Bool
+    let message: String?
+}
+
+struct DashboardStats: Codable {
+    let totalMembers: Int
+    let verifiedMembers: Int
+    let nonVerifiedMembers: Int
+    let totalVoters: Int
+    let feedbackAndComplaints: Int
+    let systemUsers: Int
+}
+
+
+// MARK: - Request Models
+
+struct RegionFetchRequest: Codable {
+    let paginationRequest: RegionPaginationRequest
+    let filters: RegionFilters
+}
+
+struct RegionPaginationRequest: Codable {
+    let pageNumber: Int
+    let pageSize: Int
+    let afterCursor: Int
+    let beforeCursor: Int
+    let sortDirection: String
+}
+
+struct RegionFilters: Codable {
+    var searchTerm: String = ""
+    var name: String = ""
+    var code: String = ""
+}
+
+// MARK: - Response Models
+struct RegionResponse: Codable {
+    let data: [Region]?  // Made optional for safety
+    let isSuccess: Bool
+    let message: String?
+    let paginationResponse: RegionPaginationResponse?
+}
+
+struct Region: Codable {
+    let id: Int
+    let name: String
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let isActive: Bool
+    
+    // The JSON has these, so adding them prevents Decodable issues
+    let createdAt: String?
+    let updatedAt: String?
+}
+
+struct RegionPaginationResponse: Codable {
+    let pageSize: Int?
+    let itemCount: Int?
+    let totalRecords: Int?
+    let currentPage: Int?
+    let totalPages: Int?
+    let hasNextPage: Bool?
+    let hasPreviousPage: Bool?
+}
+
+
+struct UnionCouncil1: Codable {
+    let id: Int
+    let name: String
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let isActive: Bool
+    
+    // The API sends this object, not 'constituencyId'
+    let constituency: ConstituencyMini?
+    
+    // Making this optional prevents the crash
+    let constituencyId: Int?
+}
+
+struct Wards: Codable {
+    let id: Int
+    let name: String
+    let urduName: String?
+    
+    // The API likely sends a 'unionCouncil' object here too
+    let unionCouncil: UnionCouncilMini?
+    
+    // Making this optional prevents the crash
+    let ucId: Int?
+}
+
+// Minimal helper structs for nested data
+struct ConstituencyMini: Codable {
+    let id: Int
+    let name: String
+}
+
+struct UnionCouncilMini: Codable {
+    let id: Int
+    let name: String
+}
+
+struct Ward1: Codable {
+    let id: Int
+    let name: String
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let isActive: Bool
+    
+    // The API sends this object, not 'ucId'
+    let unionCouncil: UnionCouncilMini?
+    
+    // Making this optional prevents the 'keyNotFound' crash
+    let ucId: Int?
+}
+
+
+struct Constituency1: Codable {
+    let id: Int
+    let name: String
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let isActive: Bool
+    let district: DistrictInfo?
+}
+
+struct DistrictInfo: Codable {
+    let id: Int
+    let name: String
+}
+
+
+struct APIResponses<T: Codable>: Codable {
+    let data: T?
+    let isSuccess: Bool
+    let message: String?
+}
+
+
+//Add RegionsViewController
+
+// MARK: - Region
+struct JDRegion: Codable {
+    let id: Int
+    let name: String
+    let urduName: String?
+    let code: String?
+    let description: String?
+}
+
+// MARK: - District
+struct JDDistrict: Codable {
+    let id: Int
+    let name: String
+    let regionId: Int?
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let region: JDRegion? // API sends nested object
+}
+
+// MARK: - Constituency
+struct JDConstituency: Codable {
+    let id: Int
+    let name: String
+    let districtId: Int?
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let district: JDDistrict? // API sends nested object
+}
+
+// MARK: - Union Council
+struct JDUnionCouncil: Codable {
+    let id: Int
+    let name: String
+    let constituencyId: Int?
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let constituency: JDConstituency? // API sends nested object
+}
+
+// MARK: - Ward
+struct JDWard: Codable {
+    let id: Int
+    let name: String
+    let unionCouncilId: Int?
+    let urduName: String?
+    let code: String?
+    let description: String?
+    let unionCouncil: JDUnionCouncil? // API sends nested object
+}
+
+// MARK: - All users
+struct JDMSUserResponse: Codable {
+    let data: JDMSUserData?
+    let isSuccess: Bool
+    let message: String?
+}
+
+struct JDMSUserData: Codable {
+    let users: [JDMSUser]?
+    let paginationResponseDetails: JDMSUserPaginationDetails?
+}
+
+struct JDMSUser: Codable {
+    let id: Int
+    let userName: String?
+    let email: String?
+    let created:String?
+    let name: String?
+    let phoneNumber: String?
+    let roles: [JDMSUserRole]?
+}
+
+struct JDMSUserRole: Codable {
+    let id: Int
+    let name: String?
+}
+
+struct JDMSUserPaginationDetails: Codable {
+    let totalRecords: Int
+    let pageSize: Int
+}
+
+
+struct JDMSUserResponse1: Codable {
+    let isSuccess: Bool
+    let message: String?
+    let errors: [JDMSErrorDetails]?
+}
+
+struct JDMSErrorDetails: Codable {
+    let description: String?
+    let fieldName: String?
+}
+
+
+// For GET /api/Account/all-roles
+struct JDMSAllRolesResponse: Codable {
+    let data: [JDMSUserRole]?
+    let isSuccess: Bool
+    let message: String?
+}
+
+// For POST /api/Account/assign-role
+struct JDMSAssignRoleRequest: Codable {
+    let userId: Int
+    let roleId: Int
+}
+
+
+struct JDMSDirectChatResponse: Codable {
+    let data: JDMSConversationData?
+    let isSuccess: Bool
+    let message: String?
+}
+
+
+struct JDMSParticipant: Codable {
+    let userId: Int
+    let userName: String?
+    let role: String?
+}
+
+
+struct JDMSAllConversationsResponse: Codable {
+    let data: [JDMSConversationData]?
+    let isSuccess: Bool
+    let message: String?
+}
+
+struct JDMSConversationData: Codable {
+    let id: Int
+    let conversationType: String
+    let participants: [JDMSParticipant]
+    let unreadCount: Int
+    let lastMessage: JDMSMessageSnippet? // New field
+    let lastMessageAt: String?           // New field
+}
+
+struct JDMSMessageSnippet: Codable {
+    let id: Int
+    let senderName: String?
+    let text: String?
+    let createdAt: String?
+}
+
+
+struct JDMSMessagesResponse: Codable {
+    let data: [JDMSMessageData]?
+    let isSuccess: Bool
+    let message: String?
+}
+
+struct JDMSMessageData: Codable {
+    let id: Int
+    let senderId: Int
+    let senderName: String?
+    let messageText: String? // Changed from 'text' to match Swagger response
+    let createdAt: String?
+}
+
+struct BannerResponse: Codable {
+    let data: BannerDataWrapper?
+    let isSuccess: Bool
+    let message: String?
+}
+
+struct BannerDataWrapper: Codable {
+    let data: [BannerImage]?
+    // You can add paginationResponseDetails here if you need to track total pages
+}
+
+struct BannerImage: Codable {
+    let id: Int
+    let imageUrl: String
+    let description: String?
+    let displayOrder: String?
+    let isActive: Bool
+    
+    // Helper to get full URL
+    var fullImageUrl: String {
+        return "\(APIClient.shared.baseURL)\(imageUrl)"
+    }
+}
+
+
+import Foundation
+
+struct ApiResponse<T: Codable>: Codable {
+    let isSuccess: Bool
+    let message: String?
+    let errors: [ApiError]?
+    let data: T? // This holds the actual content (Banner, Notification, etc.)
+}
+
+struct ApiError: Codable {
+    let errorCode: String?
+    let errorCodeName: String?
+    let fieldName: String?
+    let description: String?
+    let timestamp: String?
 }

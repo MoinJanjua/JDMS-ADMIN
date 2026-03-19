@@ -23,26 +23,38 @@ class SidebarMenuVC: UIViewController, UITableViewDataSource, UITableViewDelegat
     var lastName : String?
     let uicolor = UIColor()
     
-    let menuItems: [MenuItem] = [
-        MenuItem(title: "Dashboard", imageName: "Dashboard"),
-        MenuItem(title: "Ameer-e-Jamat", imageName: "intro"),
-        MenuItem(title: "Members", imageName: "Members"),
-        MenuItem(title: "Chat", imageName: "Chat"),
-        MenuItem(title: "Dawat & Tarbiyah", imageName: "article"),
-        MenuItem(title: "Regions", imageName: "Regions"),
-        MenuItem(title: "Ijtimaat", imageName: "Ijtimaat"),
-        MenuItem(title: "Designations", imageName: "Designations"),
-        MenuItem(title: "Voter", imageName: "id"),
-        MenuItem(title: "Notifications", imageName: "Notifications"),
-        MenuItem(title: "Forms", imageName: "forms"),
-        MenuItem(title: "Feedback/Complaints", imageName: "compliants"),
-        MenuItem(title: "System", imageName: "System"),
-        MenuItem(title: "Log Out", imageName: "logout")
+    var menuItems: [MenuItem] {
+        // Basic items everyone can see
+        var items = [
+            MenuItem(title: "Dashboard", imageName: "Dashboard"),
+            MenuItem(title: "Ameer-e-Jamat", imageName: "intro"),
+            MenuItem(title: "Members", imageName: "Members"),
+            MenuItem(title: "Chat", imageName: "Chat"),
+            MenuItem(title: "Dawat & Tarbiyah", imageName: "article"),
+            MenuItem(title: "Regions", imageName: "Regions"),
+            MenuItem(title: "Ijtimaat", imageName: "Ijtimaat"),
+            MenuItem(title: "Designations", imageName: "Designations"),
+            MenuItem(title: "Voter", imageName: "id"),
+            MenuItem(title: "Notifications", imageName: "Notifications"),
+            MenuItem(title: "Feedback/Complaints", imageName: "compliants")
+        ]
         
-    ]
-    
-    
-    
+        // 🛡️ Admin & SuperAdmin ONLY items
+        // Using your existing PermissionManager logic
+        if PermissionManager.shared.canPerform(action: .addBanner) {
+            items.append(MenuItem(title: "Banners", imageName: "bannerIcon"))
+        }
+        
+        if PermissionManager.shared.canPerform(action: .manageRoles) {
+            items.append(MenuItem(title: "System", imageName: "System"))
+        }
+        
+        // Logout always at the end
+        items.append(MenuItem(title: "Log Out", imageName: "logout"))
+        
+        return items
+    }
+
     var defaultHighlightedCell: Int = 0
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -210,12 +222,15 @@ class SidebarMenuVC: UIViewController, UITableViewDataSource, UITableViewDelegat
 
         case "Notifications":
             destinationVC = storyboard.instantiateViewController(withIdentifier: "NotificationViewController")
-
-        case "Forms":
-            destinationVC = storyboard.instantiateViewController(withIdentifier: "FormsViewController")
+//
+//        case "Forms":
+//            destinationVC = storyboard.instantiateViewController(withIdentifier: "FormsViewController")
             
         case "Feedback/Complaints":
             destinationVC = storyboard.instantiateViewController(withIdentifier: "FeedbackViewController")
+            
+        case "Banners":
+            destinationVC = storyboard.instantiateViewController(withIdentifier: "BannerImageViewController")
 
         case "System":
             destinationVC = storyboard.instantiateViewController(withIdentifier: "SystemAdminViewController")

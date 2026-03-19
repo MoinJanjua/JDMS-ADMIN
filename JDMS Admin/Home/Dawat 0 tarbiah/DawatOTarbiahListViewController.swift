@@ -34,6 +34,8 @@ class DawatOTarbiahListViewController: UIViewController {
         addDropShadow(to: addbtn)
         
         setupActivityIndicator()
+        let canAddContent = PermissionManager.shared.canPerform(action: .AddDawatTarbiah)
+        addbtn.isHidden = !canAddContent
        
     }
     
@@ -199,7 +201,9 @@ extension DawatOTarbiahListViewController: UITableViewDataSource, UITableViewDel
             pdfVC.str = selectedItem.title ?? "" // Or pass the full URL/Path
             pdfVC.pdfurl = pdfPath
             self.present(pdfVC, animated: true)
-        } else {
+        }
+        else
+        {
             // Open Text Detail Screen (DawatDetailVC or similar)
             let storyBoard = UIStoryboard(name: "Main", bundle: nil)
             let pdfVC = storyBoard.instantiateViewController(withIdentifier: "PDFViewController") as! PDFViewController
@@ -212,6 +216,14 @@ extension DawatOTarbiahListViewController: UITableViewDataSource, UITableViewDel
     
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        
+        
+        let canManage = PermissionManager.shared.canPerform(action: .AddDawatTarbiah)
+            
+            // 2. If no permission, return nil so they can't even swipe
+            guard canManage else {
+                return nil
+            }
         
         let item = articles[indexPath.row]
         

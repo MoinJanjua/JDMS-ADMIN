@@ -29,7 +29,8 @@ class DesiginationViewController: UIViewController {
         activityIndicatorView.type = .ballPulseSync
         activityIndicatorView.color = .systemGreen
         activityIndicatorView.isHidden = true // Keep it hidden until needed
-        
+        let canManage = PermissionManager.shared.canPerform(action: .Adddesigination)
+        saveButton.isEnabled = canManage
         loadDesignations()
     }
     

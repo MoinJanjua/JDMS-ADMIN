@@ -2,6 +2,7 @@
 import Foundation
 import UIKit
 import NVActivityIndicatorView
+import SideMenu
 
 @IBDesignable extension UIButton {
     func applyCornerRadiusAndShadowbutton(cornerRadius: CGFloat = 12, shadowColor: UIColor = .white, shadowOffset: CGSize = CGSize(width: 0, height: 2), shadowOpacity: Float = 0.3, shadowRadius: CGFloat = 4.0, backgroundAlpha: CGFloat = 1.0) {
@@ -174,6 +175,21 @@ extension UIColor {
 }
 
 
+
+var sideMenu: SideMenuNavigationController?
+func makeSettings() -> SideMenuSettings
+{
+   let presentationStyle = SideMenuPresentationStyle.menuSlideIn
+   
+   presentationStyle.backgroundColor =  UIColor.black.withAlphaComponent(0.5)
+   
+   presentationStyle.presentingEndAlpha = 0.5
+   var settings = SideMenuSettings()
+   settings.menuWidth = 290.0
+   settings.presentationStyle = presentationStyle
+   return settings
+}
+
 func roundCornertextView(textView:UITextView,cornerRadius:CGFloat)
 {
     textView.layer.cornerRadius = cornerRadius
@@ -324,6 +340,8 @@ func addDropShadow(to view: UIView) {
 
 
 let primaryColor = UIColor(red: 79/255, green: 143/255, blue: 0/255, alpha: 1.0)
+let DimGreenColor = UIColor(red: 52/255, green: 199/255, blue: 89/255, alpha: 0.1)
+let DimRedColor = UIColor(red: 255/255, green: 59/255, blue: 48/255, alpha: 0.1)
 
 
 func applyGradientToButtonThree(view: UIView) {
@@ -487,230 +505,6 @@ extension UIFont {
 
 
 
-
-let dawatPDFList: [DawatPDF] = [
-    
-    DawatPDF(
-        title: "Islahi Paighaam",
-        fileName: "islahi_paighaam.pdf",
-        icon: "pdf_icon",
-        uploadDate: "12 Dec 2025",
-        fileSize: "1.2 MB",
-        category: "Islah",
-        description: "A short Islahi message for personal and collective reform."
-    ),
-    
-    DawatPDF(
-        title: "Dawat-e-Deen ka Ta’aruf",
-        fileName: "dawat_e_deen_intro.pdf",
-        icon: "pdf_icon",
-        uploadDate: "08 Dec 2025",
-        fileSize: "2.5 MB",
-        category: "Dawat",
-        description: "Introduction to the mission, objectives, and methodology of Dawat-e-Deen."
-    ),
-    
-    DawatPDF(
-        title: "Tarbiyati Dars",
-        fileName: "tarbiyati_dars.pdf",
-        icon: "pdf_icon",
-        uploadDate: "05 Dec 2025",
-        fileSize: "1.8 MB",
-        category: "Training",
-        description: "Weekly Tarbiyati Dars for Arkaan and Karkunan."
-    ),
-    
-    DawatPDF(
-        title: "Seerat-un-Nabi",
-        fileName: "seerat_un_nabi.pdf",
-        icon: "pdf_icon",
-        uploadDate: "01 Dec 2025",
-        fileSize: "3.1 MB",
-        category: "Seerat",
-        description: "Dawati and Islahi aspects of the life of Prophet Muhammad."
-    ),
-    
-    DawatPDF(
-        title: "Islami Akhlaq aur Muashra",
-        fileName: "islami_akhlaq.pdf",
-        icon: "pdf_icon",
-        uploadDate: "28 Nov 2025",
-        fileSize: "2.0 MB",
-        category: "Akhlaq",
-        description: "Guidance on Islamic morals and social responsibilities."
-    ),
-    DawatPDF(
-        title: "Islahi Paighaam",
-        fileName: "islahi_paighaam.pdf",
-        icon: "pdf_icon",
-        uploadDate: "12 Dec 2025",
-        fileSize: "1.2 MB",
-        category: "Islah",
-        description: "A short Islahi message for personal and collective reform."
-    ),
-]
-
-
-let dummyAffiliations: [Affiliation] = [
-    
-    // MARK: - Affiliation 1
-    Affiliation(
-        id: 1,
-        name: "Shigar",
-        constituencies: [
-            
-            Constituency(
-                id: 101,
-                name: "LA-7 Bhimber-3",
-                unionCouncils: [
-                    UnionCouncil(
-                        id: 1001,
-                        name: "Kala Mula",
-                        wards: [
-                            Ward(id: 1, name: "Ward 1"),
-                            Ward(id: 2, name: "Ward 2"),
-                            Ward(id: 3, name: "Ward 3")
-                        ]
-                    ),
-                    UnionCouncil(
-                        id: 1002,
-                        name: "Haji Abad",
-                        wards: [
-                            Ward(id: 4, name: "Ward 1"),
-                            Ward(id: 5, name: "Ward 2")
-                        ]
-                    )
-                ]
-            ),
-            
-            Constituency(
-                id: 102,
-                name: "LA-8 Bhimber-4",
-                unionCouncils: [
-                    UnionCouncil(
-                        id: 1003,
-                        name: "Ali Pur",
-                        wards: [
-                            Ward(id: 6, name: "Ward 1"),
-                            Ward(id: 7, name: "Ward 2")
-                        ]
-                    )
-                ]
-            )
-        ]
-    ),
-    
-    // MARK: - Affiliation 2
-    Affiliation(
-        id: 2,
-        name: "Bhimber",
-        constituencies: [
-            
-            Constituency(
-                id: 201,
-                name: "LA-9 Bhimber-5",
-                unionCouncils: [
-                    UnionCouncil(
-                        id: 2001,
-                        name: "Chak Jamal",
-                        wards: [
-                            Ward(id: 8, name: "Ward 1"),
-                            Ward(id: 9, name: "Ward 2")
-                        ]
-                    )
-                ]
-            )
-        ]
-    ),
-    
-    // MARK: - Affiliation 3
-    Affiliation(
-        id: 3,
-        name: "Mirpur",
-        constituencies: [
-            
-            Constituency(
-                id: 301,
-                name: "LA-10 Mirpur-1",
-                unionCouncils: [
-                    UnionCouncil(
-                        id: 3001,
-                        name: "Sector F",
-                        wards: [
-                            Ward(id: 10, name: "Ward 1"),
-                            Ward(id: 11, name: "Ward 2"),
-                            Ward(id: 12, name: "Ward 3")
-                        ]
-                    )
-                ]
-            ),
-            
-            Constituency(
-                id: 302,
-                name: "LA-11 Mirpur-2",
-                unionCouncils: [
-                    UnionCouncil(
-                        id: 3002,
-                        name: "Sector D",
-                        wards: [
-                            Ward(id: 13, name: "Ward 1")
-                        ]
-                    )
-                ]
-            )
-        ]
-    ),
-    
-    // MARK: - Affiliation 4
-    Affiliation(
-        id: 4,
-        name: "Kotli",
-        constituencies: [
-            
-            Constituency(
-                id: 401,
-                name: "LA-12 Kotli-1",
-                unionCouncils: [
-                    UnionCouncil(
-                        id: 4001,
-                        name: "Charhoi",
-                        wards: [
-                            Ward(id: 14, name: "Ward 1"),
-                            Ward(id: 15, name: "Ward 2")
-                        ]
-                    )
-                ]
-            )
-        ]
-    ),
-    
-    // MARK: - Affiliation 5
-    Affiliation(
-        id: 5,
-        name: "Muzaffarabad",
-        constituencies: [
-            
-            Constituency(
-                id: 501,
-                name: "LA-13 Muzaffarabad-1",
-                unionCouncils: [
-                    UnionCouncil(
-                        id: 5001,
-                        name: "Lower Plate",
-                        wards: [
-                            Ward(id: 16, name: "Ward 1"),
-                            Ward(id: 17, name: "Ward 2"),
-                            Ward(id: 18, name: "Ward 3")
-                        ]
-                    )
-                ]
-            )
-        ]
-    )
-]
-
-
-
 func startLoading(view:NVActivityIndicatorView) {
     view.isHidden = false
     view.startAnimating()
@@ -732,3 +526,41 @@ class LargeHitButton: UIButton {
         return area.contains(point)
     }
 }
+
+
+extension UIView {
+    
+    // Use a unique tag to find and remove the blur later
+    private var blurViewTag: Int { return 999 }
+
+    func addBlur(style: UIBlurEffect.Style = .dark, alpha: CGFloat = 1.0) {
+        // Prevent adding multiple blurs
+        removeBlur()
+        
+        let blurEffect = UIBlurEffect(style: style)
+        let blurEffectView = UIVisualEffectView(effect: blurEffect)
+        
+        blurEffectView.frame = self.bounds
+        blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        blurEffectView.alpha = 0
+        blurEffectView.tag = blurViewTag
+        
+        self.addSubview(blurEffectView)
+        
+        UIView.animate(withDuration: 0.3) {
+            blurEffectView.alpha = alpha
+        }
+    }
+
+    func removeBlur() {
+        if let viewWithTag = self.viewWithTag(blurViewTag) {
+            UIView.animate(withDuration: 0.3, animations: {
+                viewWithTag.alpha = 0
+            }) { _ in
+                viewWithTag.removeFromSuperview()
+            }
+        }
+    }
+}
+
+

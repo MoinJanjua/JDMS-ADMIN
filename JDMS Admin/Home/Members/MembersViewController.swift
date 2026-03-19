@@ -34,13 +34,13 @@ class MembersViewController: UIViewController, UITableViewDelegate, UITableViewD
         super.viewDidLoad()
         setupUI()
         setupDropDowns()
-        fetchMembers()
         fetchDistricts()
-        
         activityIndicatorView.type = .ballPulseSync
         activityIndicatorView.color = .systemGreen
         activityIndicatorView.isHidden = true // Keep it hidden until needed
         NotificationCenter.default.addObserver(self, selector: #selector(fetchMembers), name: NSNotification.Name("MemberDeleted"), object: nil)
+        let canEdit = PermissionManager.shared.canPerform(action: .editMembers)
+        addbtn.isHidden = !canEdit
     }
     
     func setupUI() {
@@ -53,7 +53,10 @@ class MembersViewController: UIViewController, UITableViewDelegate, UITableViewD
     }
     
     
-
+    override func viewWillAppear(_ animated: Bool) {
+        fetchMembers()
+    }
+    
     // MARK: - API Calls
     
     @objc func fetchMembers(isRefresh: Bool = true) {
@@ -228,52 +231,121 @@ class MembersViewController: UIViewController, UITableViewDelegate, UITableViewD
         let member = allMembers[indexPath.row]
         cell.NameLb.text = member.fullName
         cell.FNameLb.text = "Father: \(member.fatherName)"
-        cell.districtLb.text = "CNIC: \(member.cnic)"
         cell.cityLb.text = "City: \(member.city)"
         cell.EducationLb.text = "Education: \(member.education)"
         
         if member.membershipStatus == "VERIFIED" {
-                cell.veirfybutton.setTitle("Unverify", for: .normal)
-            cell.veirfybutton.backgroundColor = .systemGreen // Indicates a 'reversal' or 'warning' action
-                cell.verifyView.backgroundColor = .systemGreen // Show a small green indicator in your verifyView
+            cell.veirfybutton.setTitle("Unverify", for: .normal)
+            cell.veirfybutton.setTitleColor(.systemGreen, for: .normal)
+            //cell.veirfybutton.backgroundColor = .systemGreen // Indicates a 'reversal' or 'warning' action
+            cell.verifyView.backgroundColor = DimGreenColor
+            cell.verifyView.layer.borderColor = UIColor(red: 52/255, green: 199/255, blue: 89/255, alpha: 1.0).cgColor
+            cell.verifyView.layer.borderWidth = 1.0 // Show a small green indicator in your verifyView
+            
             } else {
                 cell.veirfybutton.setTitle("Verify", for: .normal)
-                cell.veirfybutton.backgroundColor = .systemBlue // Primary action color
-                cell.verifyView.backgroundColor = .systemBlue // Dull color for unverified
+                cell.veirfybutton.setTitleColor(.systemRed, for: .normal)
+                cell.verifyView.backgroundColor = DimRedColor
+                cell.verifyView.layer.borderColor =  UIColor(red: 255/255, green: 59/255, blue: 48/255, alpha: 1.0).cgColor
+                cell.verifyView.layer.borderWidth = 1.0
             }
             
            
         
-        // Load Profile Image
-        // 1. Get the image path safely
-            let imagePath = member.imageUrl ?? ""
+        let gender = member.gender?.lowercased() ?? "male"
+            let placeholderName = (gender == "female") ? "userFemale" : "user 1"
+            let placeholderImage = UIImage(named: placeholderName)
+            
+            // Set content mode based on gender for the placeholder
+            cell.profileImageView.contentMode = (gender == "female") ? .scaleAspectFit : .scaleAspectFill
 
-            // 2. Only proceed if the path isn't empty
-            if !imagePath.isEmpty {
-                let finalUrlString = APIClient.shared.baseURL + imagePath
-                
-                if let url = URL(string: finalUrlString) {
-                    cell.profileImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "user"))
+            // 2. Load Image
+            let imagePath = member.imageUrl ?? ""
+            if !imagePath.isEmpty, let url = URL(string: APIClient.shared.baseURL + imagePath) {
+                // SDWebImage will replace the placeholder once the real image is ready
+                cell.profileImageView.sd_setImage(with: url, placeholderImage: placeholderImage) { (image, error, cacheType, url) in
+                    // Once the REAL image loads, switch to AspectFill for a professional look
+                    if image != nil {
+                        cell.profileImageView.contentMode = .scaleAspectFill
+                    }
                 }
-            } else {
-                // 3. If no path exists, explicitly set the placeholder
-                cell.profileImageView.image = UIImage(named: "user")
             }
+        else
+        {
+                // No path, just show placeholder
+                cell.profileImageView.image = placeholderImage
+        }
         
         cell.onVerifyTap = { [weak self] in
-            let statusAction = (member.membershipStatus == "VERIFIED") ? "Unverify" : "Verify"
+            let action = (member.membershipStatus == "VERIFIED") ? "Unverify" : "Verify"
             
             self?.showAlertWithButtons(title: "Confirm",
-                           message: "Are you sure you want to \(statusAction) this member?",
-                           okTitle: statusAction,
-                           cancelTitle: "Cancel") {
-                // CALL YOUR VERIFY API HERE
-               // self?.toggleMemberVerification(memberId: member.id, currentStatus: member.isActive ?? false)
+                                       message: "Do you want to \(action) this member?",
+                                       okTitle: "Yes",
+                                       cancelTitle: "No") {
+                self?.toggleMemberStatus(member: member)
             }
         }
 
         return cell
     }
+    
+    func toggleMemberStatus(member: Member) {
+        let newStatus = (member.membershipStatus == "VERIFIED") ? "NON_VERIFIED" : "VERIFIED"
+        
+        // Create the DTO with "Safe" defaults for required database fields
+        let updatedData = MemberUpdateRequest(
+            id: member.id ?? 0,
+            fullName: member.fullName,
+            urduName: "", // Add if you have a field for this
+            fatherName: member.fatherName,
+            cnic: member.cnic,
+            email: member.email,
+            phoneNumber: member.phoneNumber,
+            alternatePhoneNumber: "",
+            address: member.address,
+            city:member.city,
+            district:member.district?.title,
+            village:member.village,
+            dateOfBirth: formatToISO8601(dateString:member.dateOfBirth),
+            gender: member.gender,
+            maritalStatus:  member.maritalStatus,
+            bloodGroup: "O+",
+            education:  member.education,
+            profession:  member.profession,
+            skills:  member.skills,
+            referralName:  member.referralName,
+            designationId:  member.designationId,
+            districtId:  member.districtId,
+            constituencyId:  member.constituencyId,
+            unionCouncilId:  member.unionCouncilId,
+            wardId:  member.wardId,
+            joiningDate: formatToISO8601(dateString:  member.joiningDate),
+            membershipStatus: newStatus,
+            notes: "",
+            nameofLocalJamat: member.nameofLocalJamat,
+            tempImageId: ""
+        )
+
+        self.activityIndicatorView.startAnimating()
+        
+        APIClient.shared.updateMember(id: member.id ?? 0, memberData: updatedData) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.activityIndicatorView.stopAnimating()
+                switch result {
+                case .success:
+                    if let index = self?.allMembers.firstIndex(where: { $0.id == member.id }) {
+                            self?.allMembers[index].membershipStatus = newStatus
+                            
+                            // Reload ONLY this row with a nice animation
+                            let indexPath = IndexPath(row: index, section: 0)
+                            self?.tableView.reloadRows(at: [indexPath], with: .automatic)
+                        }
+                case .failure(let error):
+                    self?.handleAPIError(error)
+                }
+            }
+        }    }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         

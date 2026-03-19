@@ -28,6 +28,8 @@ class AmeerJamatViewController: UIViewController {
             roundCorner(button: btn)
         }
         
+        let canEdit = PermissionManager.shared.canPerform(action: .manageAmeerIntro)
+        adbtn.isHidden = !canEdit
       
     }
     override func viewWillAppear(_ animated: Bool) {

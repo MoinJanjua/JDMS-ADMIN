@@ -103,7 +103,12 @@ class LoginViewController: UIViewController {
                             UserDefaults.standard.set(token, forKey: "userToken")
                             print("Token:", response.data?.token ?? "")
                             UserDefaults.standard.set(response.data?.id, forKey: "userId")
-                            UserDefaults.standard.set(response.data?.userName, forKey: "username")
+                            UserDefaults.standard.set(response.data?.name, forKey: "username")
+                            
+                            // Inside your Login logic after success
+                            if let roles = response.data?.roles {
+                                PermissionManager.shared.saveUserRoles(roles)
+                            }
                         }
                         self.navigateToHome()
                     } else {
