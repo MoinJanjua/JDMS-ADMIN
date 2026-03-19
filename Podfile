@@ -10,6 +10,9 @@ pod 'IQKeyboardManagerSwift'
 pod 'NVActivityIndicatorView'
 pod 'Charts'
 pod 'SDWebImage'
+pod 'MessageKit'
+pod 'InputBarAccessoryView'
+pod 'SwiftSignalRClient'
   # Pods for JDMS Admin
 
 end

@@ -18,82 +18,22 @@
             endingLineNumber = "159"
             landmarkName = "saveTapped(_:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "D650988F-DC8C-4478-8116-39BE9FBF84D1 - ddd6397ce6bd6294"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "JDMS_Admin.AddEventsViewController.saveTapped(__C.UIButton) -&gt; ()"
-                  moduleName = "JDMS Admin.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/moinjanjua/Downloads/New%20Apps/JDMS%20Admin/JDMS%20Admin/Home/Ijtamat/AddEventsViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "159"
-                  endingLineNumber = "159">
-               </Location>
-               <Location
-                  uuid = "D650988F-DC8C-4478-8116-39BE9FBF84D1 - de8c46b9e487c4cf"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Result&lt;Swift.Bool, Swift.Error&gt;) -&gt; () in JDMS_Admin.AddEventsViewController.saveTapped(__C.UIButton) -&gt; ()"
-                  moduleName = "JDMS Admin.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/moinjanjua/Downloads/New%20Apps/JDMS%20Admin/JDMS%20Admin/Home/Ijtamat/AddEventsViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "159"
-                  endingLineNumber = "159">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "8ADDBFAD-EC4F-43C3-AB1D-226E5A8C2FF3"
+            uuid = "A59193B2-9725-4D57-877D-3170751AEF7F"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "JDMS Admin/Home/Members/AddMemberViewController.swift"
+            filePath = "JDMS Admin/Extensions/APIClint.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "448"
-            endingLineNumber = "448"
-            landmarkName = "sendFinalMemberData(tempImageId:)"
+            startingLineNumber = "2245"
+            endingLineNumber = "2245"
+            landmarkName = "getDistrictsByRegion(regionId:completion:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "8ADDBFAD-EC4F-43C3-AB1D-226E5A8C2FF3 - eb44aae464cec3f7"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "JDMS_Admin.AddMemberViewController.sendFinalMemberData(tempImageId: Swift.String) -&gt; ()"
-                  moduleName = "JDMS Admin.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/moinjanjua/Downloads/New%20Apps/JDMS%20Admin/JDMS%20Admin/Home/Members/AddMemberViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "448"
-                  endingLineNumber = "448">
-               </Location>
-               <Location
-                  uuid = "8ADDBFAD-EC4F-43C3-AB1D-226E5A8C2FF3 - 37414bd19b56bc2d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Result&lt;Swift.String, Swift.Error&gt;) -&gt; () in JDMS_Admin.AddMemberViewController.sendFinalMemberData(tempImageId: Swift.String) -&gt; ()"
-                  moduleName = "JDMS Admin.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/moinjanjua/Downloads/New%20Apps/JDMS%20Admin/JDMS%20Admin/Home/Members/AddMemberViewController.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "448"
-                  endingLineNumber = "448">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

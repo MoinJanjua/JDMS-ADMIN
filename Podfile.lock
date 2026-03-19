@@ -3,6 +3,9 @@ PODS:
     - Charts/Core (= 4.1.0)
   - Charts/Core (4.1.0):
     - SwiftAlgorithms (~> 1.0)
+  - InputBarAccessoryView (5.5.0):
+    - InputBarAccessoryView/Core (= 5.5.0)
+  - InputBarAccessoryView/Core (5.5.0)
   - IQKeyboardCore (1.0.8)
   - IQKeyboardManagerSwift (8.0.1):
     - IQKeyboardManagerSwift/Appearance (= 8.0.1)
@@ -41,6 +44,8 @@ PODS:
     - IQKeyboardCore
   - IQTextView (1.0.5):
     - IQKeyboardToolbar/Placeholderable
+  - MessageKit (3.8.0):
+    - InputBarAccessoryView (~> 5.5.0)
   - NVActivityIndicatorView (5.2.0):
     - NVActivityIndicatorView/Base (= 5.2.0)
   - NVActivityIndicatorView/Base (5.2.0)
@@ -49,17 +54,22 @@ PODS:
   - SDWebImage/Core (5.21.5)
   - SideMenu (6.5.0)
   - SwiftAlgorithms (1.0.0)
+  - SwiftSignalRClient (1.1.0)
 
 DEPENDENCIES:
   - Charts
+  - InputBarAccessoryView
   - IQKeyboardManagerSwift
+  - MessageKit
   - NVActivityIndicatorView
   - SDWebImage
   - SideMenu (~> 6.0)
+  - SwiftSignalRClient
 
 SPEC REPOS:
   trunk:
     - Charts
+    - InputBarAccessoryView
     - IQKeyboardCore
     - IQKeyboardManagerSwift
     - IQKeyboardNotification
@@ -68,13 +78,16 @@ SPEC REPOS:
     - IQKeyboardToolbarManager
     - IQTextInputViewNotification
     - IQTextView
+    - MessageKit
     - NVActivityIndicatorView
     - SDWebImage
     - SideMenu
     - SwiftAlgorithms
+    - SwiftSignalRClient
 
 SPEC CHECKSUMS:
   Charts: ce0768268078eee0336f122c3c4ca248e4e204c5
+  InputBarAccessoryView: 1d7b0a672b36e370f01f264b3907ef39d03328e3
   IQKeyboardCore: 8652977ec919cf5351aa2977fedd1a6546476fbc
   IQKeyboardManagerSwift: 835fc9c6e4732398113406d84900ad2e8f141218
   IQKeyboardNotification: eb4910401f5a0e68f97e71c62f8a0c5b7e9d535c
@@ -83,11 +96,13 @@ SPEC CHECKSUMS:
   IQKeyboardToolbarManager: c8a575e8b5fffe5873d0e75312244498a0759473
   IQTextInputViewNotification: 3b9fb27a16e7ee8958cc9092cfb07a1a9e1fd559
   IQTextView: ae13b4922f22e6f027f62c557d9f4f236b19d5c7
+  MessageKit: a1ba0c69ebead94029867853eb44dd05b9b3f453
   NVActivityIndicatorView: fe52a6a68664c2df8991d7d9e3d86d8d19453c53
   SDWebImage: e9c98383c7572d713c1a0d7dd2783b10599b9838
   SideMenu: f583187d21c5b1dd04c72002be544b555a2627a2
   SwiftAlgorithms: 38dda4731d19027fdeee1125f973111bf3386b53
+  SwiftSignalRClient: 2fa651ea18d47c5aaa135f0c8cf959239c845999
 
-PODFILE CHECKSUM: 3f634936990c483a15de6bd8c4b3979feb97fd71
+PODFILE CHECKSUM: 63ea24c2f0ccbb33082161f54349fd659a7c723e
 
 COCOAPODS: 1.16.2
